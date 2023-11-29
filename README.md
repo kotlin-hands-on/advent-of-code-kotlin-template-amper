@@ -26,6 +26,11 @@ How cool is that?
 
 Right after the [@actions-user][actions-user] actor pushes the second commit to your repository, you're ready to clone it within the IntelliJ IDEA.
 
+> [!IMPORTANT]
+>
+> Right after opening the project in IntelliJ IDEA, verify if you use at least **Java 17** as Project SDK.
+> To do that, visit [Project Structure Settings][docs-project-structure] (<kbd>⌘ Cmd</kbd><kbd>;</kbd> on macOS or <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> on Windows/Linux).
+
 From now, everything's in your hands!
 Join the [Advent of Code][aoc] contest, solve the *Day 01* as soon as it is published.
 
@@ -125,6 +130,12 @@ fun main() {
 }
 ```
 
+> [!NOTE]
+> 
+> There is a fork of this repository available which utilizes the Amper tool for project configuration, recently [introduced by JetBrains][amper].
+> 
+> For more, see: [Advent of Code Kotlin Template — Amper][amper-template] project.
+
 ## Getting help
 
 If you stuck with Kotlin-specific questions or anything related to this template, check out the following resources:
@@ -137,9 +148,9 @@ If you stuck with Kotlin-specific questions or anything related to this template
 [actions-user]: https://github.com/actions-user
 [aoc]: https://adventofcode.com
 [amper]: https://blog.jetbrains.com/blog/2023/11/09/amper-improving-the-build-tooling-user-experience/
-[amper-github]: https://github.com/JetBrains/amper
-[template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template
+[amper-template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template-amper
 [docs]: https://kotlinlang.org/docs/home.html
+[docs-project-structure]: https://www.jetbrains.com/help/idea/project-settings-and-structure.html
 [issues]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template/issues
 [kiss]: https://en.wikipedia.org/wiki/KISS_principle
 [kotlin]: https://kotlinlang.org
