@@ -24,7 +24,11 @@ After creating a new project based on this template in your account, a dedicated
 It will also personalize code to use your username and project name in namespaces and Gradle properties.
 How cool is that?
 
-You can clone it within the IntelliJ IDEA whenever the [@actions-user][actions-user] actor pushes the second commit to your repository.
+You can clone it as soon as the [@actions-user][actions-user] actor pushes the second commit to your repository.
+
+> [!WARNING]
+>
+> Amper is supported since IntelliJ IDEA `2023.3` and Fleet `1.26` releases. 
 
 > [!IMPORTANT]
 >
