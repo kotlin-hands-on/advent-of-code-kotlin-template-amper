@@ -1,7 +1,7 @@
 # Advent of Code Kotlin Template
 
 [Advent of Code][aoc] – an annual event in December since 2015.
-Every year since then, with the first day of December, a programming puzzles contest is published every day for twenty-four days.
+Every year since then, with the first day of December, a programming puzzles contest is published every day for twenty-five days.
 A set of Christmas-oriented challenges provides any input you have to use to answer using the language of your choice.
 We offer you a template prepared to use with [Kotlin][kotlin] language within this repository.
 
@@ -44,7 +44,7 @@ Copy the `Day01.kt` solution file for the following days and increment the day n
 >
 > Remember to join the Kotlin contest!
 >
-> To do that, edit your project's _About_ section with ⚙️ icon and add the `aoc-2023-in-kotlin` topic to your project.
+> To do that, edit your project's _About_ section with ⚙️ icon and add the `aoc-2024-in-kotlin` topic to your project.
 >
 > **We will find your repository and count you in our giveaway.**
 
