@@ -9,10 +9,7 @@ We offer you a template prepared to use with [Kotlin][kotlin] language within th
 
 > [!IMPORTANT]
 >
-> This is a fork of the main [Advent of Code Kotlin Template][template] repository which utilizes the Amper tool for project configuration, recently [introduced by JetBrains][amper].
-> 
-> With this version, we swapped the standard Gradle build configuration with `module.yaml` Amper file.
-> For more deails, see [Amper project][amper-github]
+> This is a fork of the main [Advent of Code Kotlin Template][template] repository which uses the [Amper build tool][amper-github].
 
 ## Workflow
 **Advent of Code Kotlin Template** is a particular type of GitHub repository that lets you speed up the setup phase and start writing your AoC solutions immediately.
@@ -21,14 +18,14 @@ The general idea is straightforward – to create a new project based on this te
 And remember – **do not fork it!**
 
 After creating a new project based on this template in your account, a dedicated GitHub Actions workflow will start and clean up the code from redundant files.
-It will also personalize code to use your username and project name in namespaces and Gradle properties.
+It will also personalize code to use your username and project name in namespaces.
 How cool is that?
 
 You can clone it as soon as the [@actions-user][actions-user] actor pushes the second commit to your repository.
 
 > [!WARNING]
 >
-> Amper is supported since IntelliJ IDEA `2023.3` and Fleet `1.26` releases. 
+> For Amper IDE support, use the latest version of [IntelliJ IDEA][intellij] or [Fleet][fleet].
 
 > [!IMPORTANT]
 >
@@ -56,8 +53,6 @@ After you create a new project based on the current template repository using th
 .
 ├── README.md               README file
 ├── module.yaml             Amper configuration file
-├── settings.gradle.kts     Gradle project settings
-├── gradle*                 Gradle wrapper files
 └── src
     ├── Day01.kt            An empty implementation for the first AoC day
     ├── Utils.kt            A set of utility methods shared across your days
@@ -145,11 +140,12 @@ If you are stuck with Kotlin-specific questions or anything related to this temp
 
 [actions-user]: https://github.com/actions-user
 [aoc]: https://adventofcode.com
-[amper]: https://blog.jetbrains.com/blog/2023/11/09/amper-improving-the-build-tooling-user-experience/
 [amper-github]: https://github.com/JetBrains/amper
 [template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template
 [docs]: https://kotlinlang.org/docs/home.html
 [docs-project-structure]: https://www.jetbrains.com/help/idea/project-settings-and-structure.html
+[fleet]: https://www.jetbrains.com/fleet/
+[intellij]: https://www.jetbrains.com/idea/
 [issues]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template/issues
 [kiss]: https://en.wikipedia.org/wiki/KISS_principle
 [kotlin]: https://kotlinlang.org
