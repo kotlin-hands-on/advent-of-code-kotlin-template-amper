@@ -7,6 +7,10 @@ We offer you a template prepared to use with [Kotlin][kotlin] language within th
 
 ![][file:cover]
 
+> [!IMPORTANT]
+>
+> This is a fork of the main [Advent of Code Kotlin Template][template] repository which uses the [Amper build tool][amper-github].
+
 ## Live Streams
 
 Join us as we solve the Advent of Code challenges live on stream!
@@ -24,14 +28,18 @@ The general idea is straightforward – to create a new project based on this te
 And remember – **do not fork it!**
 
 After creating a new project based on this template in your account, a dedicated GitHub Actions workflow will start and clean up the code from redundant files.
-It will also personalize code to use your username and project name in namespaces and Gradle properties.
+It will also personalize code to use your username and project name in namespaces.
 How cool is that?
 
-You can clone it within the IntelliJ IDEA whenever the [@actions-user][actions-user] actor pushes the second commit to your repository.
+You can clone it as soon as the [@actions-user][actions-user] actor pushes the second commit to your repository.
+
+> [!WARNING]
+>
+> For Amper IDE support, use the latest version of [IntelliJ IDEA][intellij] or [Fleet][fleet].
 
 > [!IMPORTANT]
 >
-> Right after opening the project in IntelliJ IDEA, verify if you use at least **Java 11** as Project SDK.
+> Right after opening the project in IntelliJ IDEA, verify if you use at least **Java 17** as Project SDK.
 > To do that, visit [Project Structure Settings][docs-project-structure] (<kbd>⌘ Cmd</kbd><kbd>;</kbd> on macOS or <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>S</kbd> on Windows/Linux).
 
 From now on, everything's in your hands!
@@ -54,9 +62,7 @@ After you create a new project based on the current template repository using th
 ```
 .
 ├── README.md               README file
-├── build.gradle.kts        Gradle configuration created with Kotlin DSL
-├── settings.gradle.kts     Gradle project settings
-├── gradle*                 Gradle wrapper files
+├── module.yaml             Amper configuration file
 └── src
     ├── Day01.kt            An empty implementation for the first AoC day
     ├── Utils.kt            A set of utility methods shared across your days
@@ -133,12 +139,6 @@ fun main() {
 }
 ```
 
-> [!NOTE]
->
-> There is a fork of this repository available that utilizes the Amper tool for project configuration, recently [introduced by JetBrains][amper].
->
-> For more, see [Advent of Code Kotlin Template — Amper][amper-template] project.
-
 ## Getting help
 
 If you are stuck with Kotlin-specific questions or anything related to this template, check out the following resources:
@@ -150,10 +150,12 @@ If you are stuck with Kotlin-specific questions or anything related to this temp
 
 [actions-user]: https://github.com/actions-user
 [aoc]: https://adventofcode.com
-[amper]: https://blog.jetbrains.com/blog/2023/11/09/amper-improving-the-build-tooling-user-experience/
-[amper-template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template-amper
+[amper-github]: https://github.com/JetBrains/amper
+[template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template
 [docs]: https://kotlinlang.org/docs/home.html
 [docs-project-structure]: https://www.jetbrains.com/help/idea/project-settings-and-structure.html
+[fleet]: https://www.jetbrains.com/fleet/
+[intellij]: https://www.jetbrains.com/idea/
 [issues]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template/issues
 [kiss]: https://en.wikipedia.org/wiki/KISS_principle
 [kotlin]: https://kotlinlang.org
