@@ -1,11 +1,8 @@
 #!/bin/sh
 
 #
-# Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+# Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 #
-
-# TODO gradlew also tries to set ulimit -n (max files), probably we should too
-# TODO Script could be run in parallel for the first time, so download/extract code should not fail in that case
 
 # Possible environment variables:
 #   AMPER_DOWNLOAD_ROOT        Maven repository to download Amper dist from.
@@ -15,13 +12,14 @@
 #   AMPER_BOOTSTRAP_CACHE_DIR  Cache directory to store extracted JRE and Amper distribution
 #   AMPER_JAVA_HOME            JRE to run Amper itself (optional, does not affect compilation)
 #   AMPER_JAVA_OPTIONS         JVM options to pass to the JVM running Amper (does not affect the user's application)
+#   AMPER_NO_WELCOME_BANNER    Disables the first-run welcome message if set to a non-empty value
 
 set -e -u
 
 # The version of the Amper distribution to provision and use
-amper_version=0.5.0
+amper_version=0.9.1
 # Establish chain of trust from here by specifying exact checksum of Amper distribution to be run
-amper_sha256=054f8a3a009d1f5bd749efff7fc97fb3c773d3ad6505120eb320ddb2ed17fb9b
+amper_sha256=1c2f456284a2f2133a8b093acf2e01042b17527410f195436cd573eed8188197
 
 AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://packages.jetbrains.team/maven/p/amper/amper}"
 AMPER_JRE_DOWNLOAD_ROOT="${AMPER_JRE_DOWNLOAD_ROOT:-https:/}"
@@ -40,6 +38,7 @@ download_and_extract() {
   sha_size="$4"
   cache_dir="$5"
   extract_dir="$6"
+  show_banner_on_cache_miss="$7"
 
   if [ -e "$extract_dir/.flag" ] && [ "$(cat "$extract_dir/.flag")" = "${file_sha}" ]; then
     # Everything is up-to-date in $extract_dir, do nothing
@@ -84,18 +83,34 @@ download_and_extract() {
     return 0;
   fi
 
+  if [ "$show_banner_on_cache_miss" = "true" ] && [ -z "${AMPER_NO_WELCOME_BANNER:-}" ]; then
+      echo
+      echo '        _____  Welcome to                                  '
+      echo '       /:::::|  ____   ___     ____      ____    __  ___   '
+      echo '      /::/|::| |::::\_|:::\   |:::::\   /::::\  |::|/:::|  '
+      echo '     /::/ |::| |::|\:::|\::\  |::|\::\ /:/__\:\ |:::/      '
+      echo '    /::/__|::| |::| |::| |::| |::| |::|:::::::/ |::|       '
+      echo '   /:::::::::| |::| |::| |::| |::|/::/ \::\__   |::|       '
+      echo '  /::/    |::| |::| |::| |::| |:::::/   \::::|  |::|       '
+      echo '                              |::|                         '
+      echo "                              |::|  v.$amper_version       "
+      echo
+      echo "This is the first run of this version, so we need to download the actual Amper distribution."
+      echo "Please give us a few seconds, subsequent runs will be faster."
+      echo
+  fi
+
+  echo "Downloading $moniker..."
+
   temp_file="$cache_dir/download-file-$$.bin"
-
-  echo "Downloading $moniker... (only happens on the first run of this version)"
-
   rm -f "$temp_file"
   if command -v curl >/dev/null 2>&1; then
     if [ -t 1 ]; then CURL_PROGRESS="--progress-bar"; else CURL_PROGRESS="--silent --show-error"; fi
     # shellcheck disable=SC2086
-    curl $CURL_PROGRESS -L --fail --output "${temp_file}" "$file_url" 2>&1
+    curl $CURL_PROGRESS -L --fail --retry 5 --connect-timeout 30 --output "${temp_file}" "$file_url"
   elif command -v wget >/dev/null 2>&1; then
     if [ -t 1 ]; then WGET_PROGRESS=""; else WGET_PROGRESS="-nv"; fi
-    wget $WGET_PROGRESS -O "${temp_file}" "$file_url" 2>&1
+    wget $WGET_PROGRESS --tries=5 --connect-timeout=30 --read-timeout=120 -O "${temp_file}" "$file_url"
   else
     die "ERROR: Please install 'wget' or 'curl', as Amper needs one of them to download $moniker"
   fi
@@ -140,10 +155,7 @@ check_sha() {
   sha_size=$4
   if command -v shasum >/dev/null 2>&1; then
     echo "$3 *$2" | shasum -a "$sha_size" --status -c || {
-      echo "$2 (downloaded from $1):" >&2
-      echo "expected checksum $3 but got: $(shasum --binary -a "$sha_size" "$2" | awk '{print $1}')" >&2
-
-      die "ERROR: Checksum mismatch for $1"
+      die "ERROR: Checksum mismatch for $2 (downloaded from $1): expected checksum $3 but got $(shasum --binary -a "$sha_size" "$2" | awk '{print $1}')"
     }
     return 0
   fi
@@ -151,10 +163,7 @@ check_sha() {
   shaNsumCommand="sha${sha_size}sum"
   if command -v "$shaNsumCommand" >/dev/null 2>&1; then
     echo "$3 *$2" | $shaNsumCommand -w -c || {
-      echo "$2 (downloaded from $1):" >&2
-      echo "expected checksum $3 but got: $($shaNsumCommand "$2" | awk '{print $1}')" >&2
-
-      die "ERROR: Checksum mismatch for $1"
+      die "ERROR: Checksum mismatch for $2 (downloaded from $1): expected checksum $3 but got $($shaNsumCommand "$2" | awk '{print $1}')"
     }
     return 0
   fi
@@ -170,13 +179,15 @@ arch=$(uname -m)
 case "$kernelName" in
   Darwin* )
     simpleOs="macos"
-    jbr_os="osx"
-    default_amper_cache_dir="$HOME/Library/Caches/Amper"
+    jre_os="macosx"
+    jre_archive_type="tar.gz"
+    default_amper_cache_dir="$HOME/Library/Caches/JetBrains/Amper"
     ;;
   Linux* )
     simpleOs="linux"
-    jbr_os="linux"
-    default_amper_cache_dir="$HOME/.cache/Amper"
+    jre_os="linux"
+    jre_archive_type="tar.gz"
+    default_amper_cache_dir="$HOME/.cache/JetBrains/Amper"
     # If linux runs in 32-bit mode, we want the "fake" 32-bit architecture, not the real hardware,
     # because in this mode linux cannot run 64-bit binaries.
     # shellcheck disable=SC2046
@@ -184,9 +195,10 @@ case "$kernelName" in
     ;;
   CYGWIN* | MSYS* | MINGW* )
     simpleOs="windows"
-    jbr_os="windows"
+    jre_os="win"
+    jre_archive_type=zip
     if command -v cygpath >/dev/null 2>&1; then
-      default_amper_cache_dir=$(cygpath -u "$LOCALAPPDATA\Amper")
+      default_amper_cache_dir=$(cygpath -u "$LOCALAPPDATA\JetBrains\Amper")
     else
       die "The 'cypath' command is not available, but Amper needs it. Use amper.bat instead, or try a Cygwin or MSYS environment."
     fi
@@ -196,70 +208,122 @@ case "$kernelName" in
     ;;
 esac
 
-# TODO should we respect --shared-caches-root instead of (or in addition to) this env var?
 amper_cache_dir="${AMPER_BOOTSTRAP_CACHE_DIR:-$default_amper_cache_dir}"
 
 # ********** Provision Amper distribution **********
 
-amper_url="$AMPER_DOWNLOAD_ROOT/org/jetbrains/amper/cli/$amper_version/cli-$amper_version-dist.tgz"
+amper_url="$AMPER_DOWNLOAD_ROOT/org/jetbrains/amper/amper-cli/$amper_version/amper-cli-$amper_version-dist.tgz"
 amper_target_dir="$amper_cache_dir/amper-cli-$amper_version"
-download_and_extract "Amper distribution v$amper_version" "$amper_url" "$amper_sha256" 256 "$amper_cache_dir" "$amper_target_dir"
+download_and_extract "Amper distribution v$amper_version" "$amper_url" "$amper_sha256" 256 "$amper_cache_dir" "$amper_target_dir" "true"
 
 # ********** Provision JRE for Amper **********
 
 if [ "x${AMPER_JAVA_HOME:-}" = "x" ]; then
   case $arch in
-    x86_64 | x64)    jbr_arch="x64" ;;
-    aarch64 | arm64) jbr_arch="aarch64" ;;
+    x86_64 | x64)    jre_arch="x64" ;;
+    aarch64 | arm64) jre_arch="aarch64" ;;
     *) die "Unsupported architecture $arch" ;;
   esac
 
   # Auto-updated from syncVersions.main.kts, do not modify directly here
-  jbr_version=21.0.4
-  jbr_build=b509.26
+  zulu_version=25.28.85
+  java_version=25.0.0
 
-  # URL for JBR (vanilla) - see https://github.com/JetBrains/JetBrainsRuntime/releases
-  jbr_url="$AMPER_JRE_DOWNLOAD_ROOT/cache-redirector.jetbrains.com/intellij-jbr/jbr-$jbr_version-$jbr_os-$jbr_arch-$jbr_build.tar.gz"
-  jbr_target_dir="$amper_cache_dir/jbr-$jbr_version-$jbr_os-$jbr_arch-$jbr_build"
-
-  platform="$jbr_os $jbr_arch"
+  pkg_type=jre
+  platform="$jre_os $jre_arch"
   case $platform in
-    "osx x64")         jbr_sha512=04ef2e808e691451c62b557e8f151aedbffca1a9d9c93d8eddff8f47f8cd3a1ad06dabb6ea908ae8a97616fc34d96a352319efd480bcfd7d024e80b5050e1343 ;;
-    "osx aarch64")     jbr_sha512=fe7f85ed23a0cd47384e80ce99e5bb746fd0303ee197a0076ea026e5d7898c7e91a7189e0d23fbb18b26edd693e13507d29b5ffdfd08d4712e96c2303cf2ed70 ;;
-    "linux x64")       jbr_sha512=b631092e911d84b6d2d116e3668a05b884e7a9696d2c67b842bfabc93bad9773671605934c4262ea647bcf3bbfaa2eb535d56d458510b9bc924471dd88296912 ;;
-    "linux aarch64")   jbr_sha512=9136bf6b8bc2f10d750848dceacb25baeded3a05e4bc694a63602386738a72e81c578d5146d99a68fbb2cde04852a23e843539869bbbb6fb8794038a5e4a5061 ;;
-    "windows x64")     jbr_sha512=6a639d23039b83cf1b0ed57d082bb48a9bff6acae8964192a1899e8a1c0915453199b501b498e5874bc57c9996d871d49f438054b3c86f643f1c1c4f178026a3 ;;
-    "windows aarch64") jbr_sha512=9fd2333f3d55f0d40649435fc27e5ab97ad44962f54c1c6513e66f89224a183cd0569b9a3994d840b253060d664630610f82a02f45697e5e6c0b4ee250dd1857 ;;
+    "macosx x64")     jre_sha256=a73455c80413daa31af6b09589e3655bb8b8b91e4aa884ca7c91dc5552b9e974 ;;
+    "macosx aarch64") jre_sha256=37316ebea9709eb4f8bc58f0ddd2f58e53720d3e7df6f78c64125915b44d322d ;;
+    "linux x64")      jre_sha256=807e96e43db00af3390a591ed40f2c8c35f7f475fb14b6061dfb19db33702cba ;;
+    "linux aarch64")  jre_sha256=ad75e426e3f101cfa018f65fde07d82b10337d4f85250ca988474d59891c5f50 ;;
+    "win x64")        jre_sha256=d3c5db7864e6412ce3971c0b065def64942d7b0f3d02581f7f0472cac21fbba9 ;;
+    "win aarch64")    jre_sha256=f5f6d8a913695649e8e2607fe0dc79c81953b2583013ac1fb977c63cb4935bfb; pkg_type=jdk ;;
     *) die "Unsupported platform $platform" ;;
   esac
 
-  download_and_extract "JetBrains Runtime v$jbr_version$jbr_build" "$jbr_url" "$jbr_sha512" 512 "$amper_cache_dir" "$jbr_target_dir"
+  # URL for the JRE (see https://api.azul.com/metadata/v1/zulu/packages?release_status=ga&include_fields=java_package_features,os,arch,hw_bitness,abi,java_package_type,sha256_hash,size,archive_type,lib_c_type&java_version=25&os=macos,linux,win)
+  # https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jre25.0.0-macosx_aarch64.tar.gz
+  # https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jre25.0.0-linux_x64.tar.gz
+  jre_url="$AMPER_JRE_DOWNLOAD_ROOT/cdn.azul.com/zulu/bin/zulu$zulu_version-ca-$pkg_type$java_version-${jre_os}_$jre_arch.$jre_archive_type"
+  jre_target_dir="$amper_cache_dir/zulu$zulu_version-ca-$pkg_type$java_version-${jre_os}_$jre_arch"
 
-  AMPER_JAVA_HOME=
-  for d in "$jbr_target_dir" "$jbr_target_dir"/* "$jbr_target_dir"/Contents/Home "$jbr_target_dir"/*/Contents/Home; do
+  download_and_extract "Amper runtime v$zulu_version" "$jre_url" "$jre_sha256" 256 "$amper_cache_dir" "$jre_target_dir" "false"
+
+  effective_amper_java_home=
+  for d in "$jre_target_dir" "$jre_target_dir"/* "$jre_target_dir"/Contents/Home "$jre_target_dir"/*/Contents/Home; do
     if [ -e "$d/bin/java" ]; then
-      AMPER_JAVA_HOME="$d"
+      effective_amper_java_home="$d"
     fi
   done
 
-  if [ "x${AMPER_JAVA_HOME:-}" = "x" ]; then
-    die "Unable to find bin/java under $jbr_target_dir"
+  if [ "x${effective_amper_java_home:-}" = "x" ]; then
+    die "Unable to find bin/java under $jre_target_dir"
   fi
+else
+  effective_amper_java_home="$AMPER_JAVA_HOME"
 fi
 
-java_exe="$AMPER_JAVA_HOME/bin/java"
+java_exe="$effective_amper_java_home/bin/java"
 if [ '!' -x "$java_exe" ]; then
   die "Unable to find bin/java executable at $java_exe"
 fi
 
+# ********** Script path detection **********
+
+# We might need to resolve symbolic links here
+wrapper_path=$(realpath "$0")
+
 # ********** Launch Amper **********
 
+# In this section we construct the command line by prepending arguments from biggest to lowest precedence:
+#   1. basic main class, CLI arguments, and classpath
+#   2. user JVM args (AMPER_JAVA_OPTIONS)
+#   3. default JVM args (prepended last, which means they appear first, so they are overridden by user args)
+
+# 1. Prepend basic launch arguments
 if [ "$simpleOs" = "windows" ]; then
   # Can't cygpath the '*' so it has to be outside
   classpath="$(cygpath -w "$amper_target_dir")\lib\*"
 else
   classpath="$amper_target_dir/lib/*"
 fi
-jvm_args="-ea -XX:+EnableDynamicAgentLoading ${AMPER_JAVA_OPTIONS:-}"
-# shellcheck disable=SC2086
-exec "$java_exe" "-Damper.wrapper.dist.sha256=$amper_sha256" $jvm_args -cp "$classpath" org.jetbrains.amper.cli.MainKt "$@"
+
+set -- -cp "$classpath" org.jetbrains.amper.cli.MainKt "$@"
+
+# 2. Prepend user JVM args from AMPER_JAVA_OPTS
+#
+# We use "xargs" to parse quoted JVM args from inside AMPER_JAVA_OPTS.
+# With -n1 it outputs one arg per line, with the quotes and backslashes removed.
+#
+# In Bash we could simply go:
+#
+#   readarray ARGS < <( xargs -n1 <<<"$var" ) &&
+#   set -- "${ARGS[@]}" "$@"
+#
+# but POSIX shell has neither arrays nor command substitution, so instead we
+# post-process each arg (as a line of input to sed) to backslash-escape any
+# character that might be a shell metacharacter, then use eval to reverse
+# that process (while maintaining the separation between arguments), and wrap
+# the whole thing up as a single "set" statement.
+#
+# This will of course break if any of these variables contains a newline or
+# an unmatched quote.
+if [ -n "${AMPER_JAVA_OPTIONS:-}" ]; then
+  eval "set -- $(
+    printf '%s\n' "$AMPER_JAVA_OPTIONS" |
+    xargs -n1 |
+    sed ' s~[^-[:alnum:]+,./:=@_]~\\&~g; ' |
+    tr '\n' ' '
+  )" '"$@"'
+fi
+
+# 3. Prepend default JVM args
+set -- \
+    @"$amper_target_dir/amper.args" \
+    "-Damper.wrapper.dist.sha256=$amper_sha256" \
+    "-Damper.dist.path=$amper_target_dir" \
+    "-Damper.wrapper.path=$wrapper_path" \
+    "$@"
+
+# Then we can launch with the overridden $@ arguments
+exec "$java_exe" "$@"
