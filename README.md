@@ -35,7 +35,7 @@ You can clone it as soon as the [@actions-user][actions-user] actor pushes the s
 
 > [!WARNING]
 >
-> For Amper IDE support, use the latest version of [IntelliJ IDEA][intellij] or [Fleet][fleet].
+> For Amper IDE support, use the latest EAP version of [IntelliJ IDEA][intellij].
 
 > [!IMPORTANT]
 >
@@ -154,8 +154,7 @@ If you are stuck with Kotlin-specific questions or anything related to this temp
 [template]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template
 [docs]: https://kotlinlang.org/docs/home.html
 [docs-project-structure]: https://www.jetbrains.com/help/idea/project-settings-and-structure.html
-[fleet]: https://www.jetbrains.com/fleet/
-[intellij]: https://www.jetbrains.com/idea/
+[intellij]: https://www.jetbrains.com/idea/nextversion/
 [issues]: https://github.com/kotlin-hands-on/advent-of-code-kotlin-template/issues
 [kiss]: https://en.wikipedia.org/wiki/KISS_principle
 [kotlin]: https://kotlinlang.org
